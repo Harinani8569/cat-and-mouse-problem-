@@ -23,6 +23,6 @@ pthread_t cats[n_cats];
 pthread_t rats[n_rats];
 
 srand(time(NULL));
-
+printf("cat is eating");
 
 }
