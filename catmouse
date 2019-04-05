@@ -4,8 +4,25 @@
 #include<sys/wait.h>
 #include<pthread.h>
 
-int main()
+#define n_dishes 2
+#define n_cats 4
+#define n_rats 2
+#define c_wait 10
+#define c_eat 1
+#define cat_eat 4
+#define r_wait 1
+#define r_eat 1
+#define rat_eat 4
+
+int main(int argc,char *argv[])
 {
 printf("hai iam a nouse");
+int i,err;
+dish_t dish,*dish;
+pthread_t cats[n_cats];
+pthread_t rats[n_rats];
+
+srand(time(NULL));
+
 
 }
