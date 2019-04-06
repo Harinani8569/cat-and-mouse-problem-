@@ -14,6 +14,22 @@
 #define r_eat 1
 #define rat_eat 4
 
+typedef struct dish {
+    int free_dishes;            
+    int cats_eating;            
+    int mice_eating;            
+    int cats_waiting;          
+    enum {
+        none_eating,
+        cat_eating,
+        mouse_eating
+    } 
+	status[N_DISHES];         
+    pthread_mutex_t mutex;    
+    pthread_cond_t free_cv;    
+    pthread_cond_t cat_cv;     
+
+
 int main(int argc,char *argv[])
 {
 printf("hai iam a nouse");
