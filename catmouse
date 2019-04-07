@@ -34,6 +34,23 @@ static const char *progname = "pets";
 static void dump_dish(const char *name, pthread_t pet, const char *what, dish_t *dish, int my_dish)
 {
     int i;
+     for (i = 0; i < N_DISHES; i++) {
+        if (i) printf(":");
+        switch (dish->status[i]) {
+        case none_eating:
+            printf("-");
+            break;
+        case cat_eating:
+            printf("c");
+            break;
+        case mouse_eating:
+            printf("m");
+            break;
+        }
+    }
+    printf("] %s (id %x) %s eating from dish %d\n", name, pet, what, my_dish);
+}
+
 
 
 int main(int argc,char *argv[])
