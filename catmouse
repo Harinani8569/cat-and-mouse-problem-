@@ -27,7 +27,13 @@ typedef struct dish {
 	status[N_DISHES];         
     pthread_mutex_t mutex;    
     pthread_cond_t free_cv;    
-    pthread_cond_t cat_cv;     
+    pthread_cond_t cat_cv;    
+    } dish_t;
+
+static const char *progname = "pets";
+static void dump_dish(const char *name, pthread_t pet, const char *what, dish_t *dish, int my_dish)
+{
+    int i;
 
 
 int main(int argc,char *argv[])
