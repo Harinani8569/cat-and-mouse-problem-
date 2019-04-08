@@ -1,13 +1,12 @@
-#include<stdio.h>
-#include<unistd.h>
-#include<sys/types.h>
-#include<sys/wait.h>
-#include<pthread.h>
-#include<sys/time.h>
-#include<time.h>		//used for time functions 
-#include<errno.h>
-#include<stdlib.h>
-#include<assert.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <assert.h>      //used for aasertion
+#include <unistd.h>
+#include <sys/time.h>
+#include <time.h>		//used for time functions 
+#include <errno.h>		//defines macros for reporting and retrieving error conditions using the symbol//optional extra features 
+#include <pthread.h>
 
 #define n_dishes        2      //no of dishes 
 #define n_cats          4 	   //no of cats 
@@ -20,22 +19,21 @@
 #define mouse_eat       1       //no of rats that can eat at a time 
 #define mouse_n_eat     4       //no of instances of mouse to eat 
 
-
 typedef struct dish {
-    int free_dishes;            
-    int cats_eating;            
-    int mice_eating;            
-    int cats_waiting;          
+    int free_dishes;            // how many dishes are free 
+    int cats_eating;            // how many cats are eating at the moment 
+    int mice_eating;            // how many mice are eating at the moment 
+    int cats_waiting;           // how many cats are waiting for dish 
     enum {
-        none_eating,
-        cat_eating,
-        mouse_eating
+        none_eating,			//no cat is eating 
+        cat_eating,				//cat is eating 	
+        mouse_eating			//mouse is eating 
     } 
-	status[N_DISHES];         
-    pthread_mutex_t mutex;    
-    pthread_cond_t free_cv;    
-    pthread_cond_t cat_cv;    
-    } dish_t;
+	status[n_dishes];         // status of each dish 
+    pthread_mutex_t mutex;      // mutex for accessing dish 
+    pthread_cond_t free_cv;     // used to wait for a free dish 
+    pthread_cond_t cat_cv;      // used to wait for coming cats 
+} dish_t;
 
 static const char *progname = "pets";
 static void dump_dish(const char *name, pthread_t pet, const char *what, dish_t *dish, int my_dish)
@@ -49,7 +47,7 @@ static void dump_dish(const char *name, pthread_t pet, const char *what, dish_t 
     localtime_r(&tt, &t);		  //time variable shwing when the actions are taking place 
 
     printf("%02d:%02d:%02d [", t.tm_hour, t.tm_min, t.tm_sec);
-     for (i = 0; i < N_DISHES; i++) {
+    for (i = 0; i < n_dishes; i++) {
         if (i) printf(":");
         switch (dish->status[i]) {
         case none_eating:
@@ -65,6 +63,8 @@ static void dump_dish(const char *name, pthread_t pet, const char *what, dish_t 
     }
     printf("] %s (id %x) %s eating from dish %d\n", name, pet, what, my_dish);
 }
+
+
 void* cat(void *arg)
 {
     dish_t *dish = (dish_t *) arg;
@@ -75,7 +75,8 @@ void* cat(void *arg)
     for (n = cat_n_eat; n > 0; n--) {
 
         pthread_mutex_lock(&dish->mutex);
-        pthread_cond_broadcast(&dish->cat_cv); //These functions shall unblock threads blocked on a condition variable
+       
+        pthread_cond_broadcast(&dish->cat_cv);  			//initializes the specified condition variable
         dish->cats_waiting++;
         while (dish->free_dishes <= 0 || dish->mice_eating > 0) {
             pthread_cond_wait(&dish->free_cv, &dish->mutex);
@@ -154,16 +155,15 @@ void* mouse(void *arg)
     }
 return NULL;
 }
-int main(int argc,char *argv[])
+int main(int argc, char *argv[])
 {
-printf("hai iam a nouse");
-int i,err;
-dish_t dish,*dish;
-pthread_t cats[n_cats];
-pthread_t rats[n_rats];
+    int i, err;
+    dish_t _dish, *dish;
+    pthread_t cats[n_cats];
+    pthread_t mice[n_mice];
 
-srand(time(NULL));
-dish = &_dish;
+    srand(time(NULL));  
+    dish = &_dish;
     memset(dish, 0, sizeof(dish_t));
     dish->free_dishes = n_dishes;
     pthread_mutex_init(&dish->mutex, NULL);
@@ -171,26 +171,27 @@ dish = &_dish;
     pthread_cond_init(&dish->cat_cv, NULL);
     for (i = 0; i < n_cats; i++) {
         err = pthread_create(&cats[i], NULL, cat, dish);
-        if (err != 0) {     //checks for the the error if the thread is being created or not//
-            fprintf(stderr, "%s: %s: unable to create cat thread %d: %d\n",progname, __func__, i, err);
+        if (err != 0) {
+            fprintf(stderr, "%s: %s: unable to create cat thread %d: %d\n",
+                    progname, __func__, i, err);
         }
     }
     for (i = 0; i < n_mice; i++) {
         err = pthread_create(&mice[i], NULL, mouse, dish);
         if (err != 0) {
-            fprintf(stderr, "%s: %s: unable to create mouse thread %d: %d\n",progname, __func__, i, err);
+            fprintf(stderr, "%s: %s: unable to create mouse thread %d: %d\n",
+                    progname, __func__, i, err);
         }
     }
     for (i = 0; i < n_cats; i++) {
-        (void) pthread_join(cats[i], NULL);   //thread joins the 
+        (void) pthread_join(cats[i], NULL);
     }
     for (i = 0; i < n_mice; i++) {
         (void) pthread_join(mice[i], NULL);
     }
-    pthread_mutex_destroy(&dish->mutex);   //destroys the created mutex variabl
-    pthread_cond_destroy(&dish->free_cv);  //destroys the created condition 
-    pthread_cond_destroy(&dish->cat_cv);   //destroys the created condition 
+    pthread_mutex_destroy(&dish->mutex);
+    pthread_cond_destroy(&dish->free_cv);
+    pthread_cond_destroy(&dish->cat_cv);
     
     return EXIT_SUCCESS;
-}
 }
