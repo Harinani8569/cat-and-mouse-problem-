@@ -65,50 +65,6 @@ static void dump_dish(const char *name, pthread_t pet, const char *what, dish_t 
 }
 
 
-void* cat(void *arg)
-{
-    dish_t *dish = (dish_t *) arg;
-    int n = cat_n_eat;
-    int my_dish = -1;
-    int i;
-
-    for (n = cat_n_eat; n > 0; n--) {
-
-        pthread_mutex_lock(&dish->mutex);
-       
-        pthread_cond_broadcast(&dish->cat_cv);  			//initializes the specified condition variable
-        dish->cats_waiting++;
-        while (dish->free_dishes <= 0 || dish->mice_eating > 0) {
-            pthread_cond_wait(&dish->free_cv, &dish->mutex);
-        }
-        dish->cats_waiting--;
-        assert(dish->free_dishes > 0); 					//assertion 
-        dish->free_dishes--;
-        assert(dish->cats_eating < n_cats);				//assertion 
-        dish->cats_eating++;
-        
-        for (i = 0; i < n_dishes && dish->status[i] != none_eating; i++) ;
-        my_dish = i;
-        assert(dish->status[my_dish] == none_eating);
-        dish->status[my_dish] = cat_eating;
-        dump_dish("cat", pthread_self(), "started", dish, my_dish);
-        pthread_mutex_unlock(&dish->mutex);
-
-        sleep(cat_eat);
-        pthread_mutex_lock(&dish->mutex);
-        assert(dish->free_dishes < n_dishes);
-        dish->free_dishes++;
-        assert(dish->cats_eating > 0);
-        dish->cats_eating--;
-        dish->status[my_dish] = none_eating;
-        pthread_cond_broadcast(&dish->free_cv);
-        dump_dish("cat", pthread_self(), "finished", dish, my_dish);
-        pthread_mutex_unlock(&dish->mutex);
-        sleep(rand() % cat_wait);		//raand() and srand() used in C to generate random numbers
-    }
-
-    return NULL;
-}
 void* mouse(void *arg)
 {
     dish_t *dish = (dish_t *) arg;
@@ -155,6 +111,51 @@ void* mouse(void *arg)
     }
 return NULL;
 }
+void* cat(void *arg)
+{
+    dish_t *dish = (dish_t *) arg;
+    int n = cat_n_eat;
+    int my_dish = -1;
+    int i;
+
+    for (n = cat_n_eat; n > 0; n--) {
+
+        pthread_mutex_lock(&dish->mutex);
+       
+        pthread_cond_broadcast(&dish->cat_cv);  			//initializes the specified condition variable
+        dish->cats_waiting++;
+        while (dish->free_dishes <= 0 || dish->mice_eating > 0) {
+            pthread_cond_wait(&dish->free_cv, &dish->mutex);
+        }
+        dish->cats_waiting--;
+        assert(dish->free_dishes > 0); 					//assertion 
+        dish->free_dishes--;
+        assert(dish->cats_eating < n_cats);				//assertion 
+        dish->cats_eating++;
+        
+        for (i = 0; i < n_dishes && dish->status[i] != none_eating; i++) ;
+        my_dish = i;
+        assert(dish->status[my_dish] == none_eating);
+        dish->status[my_dish] = cat_eating;
+        dump_dish("cat", pthread_self(), "started", dish, my_dish);
+        pthread_mutex_unlock(&dish->mutex);
+
+        sleep(cat_eat);
+        pthread_mutex_lock(&dish->mutex);
+        assert(dish->free_dishes < n_dishes);
+        dish->free_dishes++;
+        assert(dish->cats_eating > 0);
+        dish->cats_eating--;
+        dish->status[my_dish] = none_eating;
+        pthread_cond_broadcast(&dish->free_cv);
+        dump_dish("cat", pthread_self(), "finished", dish, my_dish);
+        pthread_mutex_unlock(&dish->mutex);
+        sleep(rand() % cat_wait);		//raand() and srand() used in C to generate random numbers
+    }
+
+    return NULL;
+}
+
 int main(int argc, char *argv[])
 {
     int i, err;
